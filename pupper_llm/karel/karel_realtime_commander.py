@@ -79,7 +79,27 @@ class KarelRealtimeCommanderNode(Node):
         #     ["move", "turn_left", "bark"]
 
         # Your code here:
-        pass
+        response = msg.data
+        logger.info(f"🤖 Response: {response}")
+        all_commands = []
+
+        for line in response.split("\n"):
+            line = line.strip()
+            if not line:
+                continue
+            extracted = self.extract_commands_from_line(line)
+            if extracted:
+                all_commands.extend(extracted)
+                       
+        if all_commands:
+            logger.info(f"📋 Commands (in order): {all_commands}")
+            # Queue commands with timestamp in sequential order
+            current_time = time.time()
+            for cmd in all_commands:
+                command_with_time = (cmd, current_time)
+                asyncio.create_task(self.command_queue.put(command_with_time))
+        else:
+            logger.debug("No commands found")
 
         
         if all_commands:
