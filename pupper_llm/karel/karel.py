@@ -48,7 +48,14 @@ class KarelPupper:
         - Call rclpy.spin_once(self.node, timeout_sec=0.1) to ensure message is sent
         - Log the action: self.node.get_logger().info(f'Started tracking: {obj}')
         """
-        pass  # TODO: Implement begin_tracking
+        # TODO: Implement begin_tracking
+        self.tracking_enabled = True
+        self.tracking_object = obj
+        msg = String()
+        msg.data = f"start:{obj}"
+        self.tracking_control_publisher.publish(msg)
+        rclpy.spin_once(self.node, timeout_sec=0.1)
+        self.node.get_logger().info(f'Started tracking: {obj}')
         
     def end_tracking(self):
         """
@@ -65,7 +72,16 @@ class KarelPupper:
         - Call self.stop() to halt movement
         - Log the action: self.node.get_logger().info('Stopped tracking')
         """
-        pass  # TODO: Implement end_tracking
+        # TODO: Implement end_tracking
+        self.tracking_enabled = False
+        self.tracking_object = None
+        msg = String()
+        msg.data = "stop"
+        self.tracking_control_publisher.publish(msg)
+        rclpy.spin_once(self.node, timeout_sec=0.1)
+        self.stop()
+        self.node.get_logger().info('Stopped tracking')
+
 
     def move(self, linear_x, linear_y, angular_z):
         move_cmd = Twist()
@@ -130,8 +146,33 @@ class KarelPupper:
         Remove the 'pass' statement after you implement the steps above.
         """
         # ==== TODO: Paste your Lab 6 implementation here ====
-        pass
+        if play_sound:
+            try:
+                pygame.mixer.init()
+                root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+                sound_path = os.path.join(root_dir, "sounds", "puppy_bob.wav")
+                if not os.path.exists(sound_path):
+                    raise FileNotFoundError(f"Sound file not found at {sound_path}")
+                sound = pygame.mixer.Sound(sound_path)
+                sound.play()
+            except Exception as e:
+                self.node.get_logger().error(f"Failed to play sound: {e}")
 
+        twist = Twist()
+        speed = 0.2
+        half_bob_duration = 0.2
+        start_time = time.time()
+
+        while time.time() - start_time < bob_time:
+            direction = 1 if int((time.time() - start_time) / half_bob_duration) % 2 == 0 else -1
+            twist.linear.x = direction * speed
+            twist.angular.z = 0.0
+            self.publisher.publish(twist)
+            rclpy.spin_once(self.node, timeout_sec=0.01)
+            time.sleep(half_bob_duration)
+
+        self.stop()
+        # ==== TODO: Implement the steps above ====
         self.node.get_logger().info('Bob!')
 
     def move_forward(self):
@@ -141,7 +182,13 @@ class KarelPupper:
         - Use the move() helper function that is implemented above, or manually construct move_cmd = Twist().
         - Publish the Twist command for a set duration, then stop.
         """
-        pass
+        move_cmd = Twist()
+        move_cmd.linear.x = 1.0
+        move_cmd.angular.z = 0.0 
+        self.publisher.publish(move_cmd)
+        rclpy.spin_once(self.node, timeout_sec=1.0)
+        self.node.get_logger().info('Move forward...')
+        self.stop()
 
     def move_backward(self):
         """
@@ -150,7 +197,13 @@ class KarelPupper:
         - Use move() or create your own Twist message.
         - Be careful with speed—backward motion is often best slower.
         """
-        pass
+        move_cmd = Twist()
+        move_cmd.linear.x = -1.0
+        move_cmd.angular.z = 0.0 
+        self.publisher.publish(move_cmd)
+        rclpy.spin_once(self.node, timeout_sec=1.0)
+        self.node.get_logger().info('Move backward...')
+        self.stop()
 
     def move_left(self):
         """
@@ -158,7 +211,13 @@ class KarelPupper:
         - Set an appropriate linear.y value for left strafe.
         - Use move() or build the move_cmd yourself.
         """
-        pass
+        move_cmd = Twist()
+        move_cmd.linear.y = 1.0
+        move_cmd.angular.z = 0.0 
+        self.publisher.publish(move_cmd)
+        rclpy.spin_once(self.node, timeout_sec=1.0)
+        self.node.get_logger().info('Move left...')
+        self.stop()
 
     def move_right(self):
         """
@@ -166,7 +225,13 @@ class KarelPupper:
         - Set an appropriate negative linear.y value for right strafe.
         - Use move() or create your own move_cmd.
         """
-        pass
+        move_cmd = Twist()
+        move_cmd.linear.y = -1.0
+        move_cmd.angular.z = 0.0 
+        self.publisher.publish(move_cmd)
+        rclpy.spin_once(self.node, timeout_sec=1.0)
+        self.node.get_logger().info('Move right...')
+        self.stop()
 
     def turn_left(self):
         """
@@ -174,7 +239,13 @@ class KarelPupper:
         - Set a positive angular.z value for left rotation.
         - Use move() or build your own move_cmd.
         """
-        pass
+        move_cmd = Twist()
+        move_cmd.linear.y = 0.0
+        move_cmd.angular.z = 1.0 
+        self.publisher.publish(move_cmd)
+        rclpy.spin_once(self.node, timeout_sec=1.0)
+        self.node.get_logger().info('Move right...')
+        self.stop()
 
     def turn_right(self):
         """
@@ -182,7 +253,13 @@ class KarelPupper:
         - Set a negative angular.z value for right rotation.
         - Use move() or make your own Twist message.
         """
-        pass
+        move_cmd = Twist()
+        move_cmd.linear.y = 0.0
+        move_cmd.angular.z = -1.0 
+        self.publisher.publish(move_cmd)
+        rclpy.spin_once(self.node, timeout_sec=1.0)
+        self.node.get_logger().info('Move right...')
+        self.stop()
 
     def bark(self):
         self.node.get_logger().info('Bark...')
@@ -215,6 +292,32 @@ class KarelPupper:
         # TODO: Paste your awesome dance choreography from Lab 6!
         # Use combinations of self.wiggle(), self.turn_left(), self.turn_right(), self.bob(), and self.stop().
         # Be creative and choreograph the most exciting dance possible!
+        try:
+            self.wiggle()
+            time.sleep(0.5)
+
+            for _ in range(2):
+                self.turn_left()
+                time.sleep(0.2)
+                self.turn_right()
+                time.sleep(0.2)
+            self.bob(bob_time=2)
+            time.sleep(0.2)
+
+            self.wiggle()
+            time.sleep(0.3)
+
+            self.turn_left()
+            time.sleep(0.2)
+            self.turn_right()
+            time.sleep(0.2)
+
+            self.stop()
+            self.node.get_logger().info("Dance complete!")
+
+        except Exception as e:
+            self.node.get_logger().error(f"Error during dance: {e}")
+            self.stop()
         pass
 
 
