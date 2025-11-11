@@ -257,9 +257,6 @@ class KarelRealtimeCommanderNode(Node):
                 logger.warning(f"Unknown command: {command}")
                 return False
             
-            else:
-                logger.warning(f"⚠️  Unknown command: {command}")
-                return False
             
             logger.info(f"✅ Done")
             return True

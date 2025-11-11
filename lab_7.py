@@ -16,9 +16,9 @@ IMAGE_WIDTH = 700
 
 # TODO: Define constants for the state machine behavior
 TIMEOUT = 0.75  # TODO: Set the timeout threshold (in seconds) for determining when a detection is too old
-SEARCH_YAW_VEL = 1.75  # TODO: Set the angular velocity (rad/s) for rotating while searching for the target
+SEARCH_YAW_VEL = 0.75  # TODO: Set the angular velocity (rad/s) for rotating while searching for the target
 TRACK_FORWARD_VEL = 0.65  # TODO: Set the forward velocity (m/s) while tracking the target
-KP = 2  # TODO: Set the proportional gain for the proportional controller that centers the target
+KP = 0.8  # TODO: Set the proportional gain for the proportional controller that centers the target
 
 class State(Enum):
     IDLE = 0     # Stay in place, no tracking
@@ -98,14 +98,14 @@ class StateMachineNode(Node):
         """
         # TODO: Implement detection callback
 
-        if len(msg.detections):
+        if len(msg.detections) == 0:
             return
         
         if self.state == State.SEARCH:
             most_center = float("inf")
             for detection in msg.detections:
-                cx = detection.bbox.center.x
-                cy = detection.bbox.center.y
+                cx = detection.bbox.center.position.x
+                cy = detection.bbox.center.position.y
                 width = detection.bbox.size_x
                 height = detection.bbox.size_y
 
@@ -121,8 +121,8 @@ class StateMachineNode(Node):
             target_pos = self.last_detection_pos
             best_pos = float("inf")
             for detection in msg.detections:
-                cx = detection.bbox.center.x
-                cy = detection.bbox.center.y
+                cx = detection.bbox.center.position.x
+                cy = detection.bbox.center.position.y
                 width = detection.bbox.size_x
                 height = detection.bbox.size_y
 
